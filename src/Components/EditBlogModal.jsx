@@ -4,6 +4,7 @@ const EditBlogModal = ({ isOpen, blog, onClose, onSave }) => {
   const [title, setTitle] = useState('');
   const [des, setDes] = useState('');
   const [img, setImg] = useState('');
+  
 
   useEffect(() => {
     if (blog) {
@@ -16,6 +17,7 @@ const EditBlogModal = ({ isOpen, blog, onClose, onSave }) => {
   const handleSave = () => {
     const updatedBlog = { ...blog, title, des, img };
     onSave(updatedBlog);
+    setEditMessage('Edited successfully')
   };
 
   if (!isOpen) return null;

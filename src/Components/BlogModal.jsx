@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Share, MessageSquareMore } from 'lucide-react';
+import { Heart, Share, MessageSquareMore, MessageSquareQuote } from 'lucide-react';
 
 const BlogModal = ({ isOpen, blog, closeModal }) => {
   if (!isOpen) return null;
@@ -12,12 +12,16 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState(getStoredComments);
   const [newComment, setNewComment] = useState("");
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [likeMessage, setLikeMessage] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       setComments(getStoredComments());
     }
-  }, [isOpen]);
+   
+    
+  }, []);
   const handleToggleComments = () => {
     setShowComments(!showComments);
   };
@@ -30,17 +34,42 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
       localStorage.setItem("blogComments", JSON.stringify(storedData));
 
       setComments(updatedComments);
-      alert('you commented on a blog!');
+      setAlertMessage('You commented has been posted');
       setNewComment(""); 
       setShowComments(!showComments);
+      setTimeout(() => {
+        setAlertMessage(null);
+      }, 3000);
       
     }
   };
+  const handleLike = () => {
+    const updatedBlog = { ...blog, likes: blog.likes + 1 };
+    const storedBlogs = JSON.parse(localStorage.getItem('blogs')) || [];
+    const updatedBlogs = storedBlogs.map((b) =>
+      b.id === updatedBlog.id ? updatedBlog : b
+    );
+    setLikeMessage('You liked this blog');
+    localStorage.setItem('blogs', JSON.stringify(updatedBlogs));
+  
+  };
+ 
+
 
   return (
+    <>
+    
     <div className="font-mono fixed inset-0 flex justify-center items-center z-50">
+    
       <div className="bg-white p-6 rounded-lg shadow-lg w-3/4 md:w-1/2">
-      
+      {alertMessage && (
+      <div className="bg-purple-100 border-l-4 border-purple-500 p-3 mb-2 font-mono  text-purple-700 p-4" role="alert">
+        <p className='flex gap-2'><MessageSquareQuote/>{alertMessage}</p>
+      </div>)}
+      {likeMessage && (
+      <div className="bg-red-100 border-l-4 border-red-200 p-3 mb-2 font-mono  text-red-300 p-4" role="alert">
+        <p className='flex gap-2'><Heart />{likeMessage}</p>
+      </div>)}
         <h2 className="text-3xl font-semibold mb-4">{blog.title}</h2>
         <hr className='text-gray-300'/>
         <div className='flex'>
@@ -54,10 +83,12 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
         <hr className='text-gray-300 mb-4'/>
 
         <div className='flex gap-3'>
-          <Heart className="text-rose-400 hover:text-rose-800 hover:scale-110 transition-transform duration-300 border p-1 rounded-md"/>
-          <Share className="text-cyan-400 hover:text-cyan-800 hover:scale-110 transition-transform duration-300 border p-1 rounded-md"/>
+          <Heart onClick={handleLike}
+          className="text-rose-400 hover:text-rose-800 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"/>
+          <Share 
+          className="text-cyan-400 hover:text-cyan-800 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"/>
           <MessageSquareMore 
-            className="text-indigo-400 hover:text-indigo-800 hover:scale-110 transition-transform duration-300 border p-1 rounded-md"
+            className="text-indigo-400 hover:text-indigo-800 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
             onClick={handleToggleComments} 
           />
         </div>
@@ -70,7 +101,7 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Write a comment..." 
-                        className="border p-2 w-full rounded-md"
+                        className=" p-2 w-full rounded-md"
                       />
                       <button 
                         onClick={handleAddComment} 
@@ -93,6 +124,7 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

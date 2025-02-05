@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import NavBar from './NavBar';
+import { ThumbsUp } from 'lucide-react';
 
 export const AddBlog = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [img, setImg] = useState('');
-
+  const [alertMessage, setAlertMessage] = useState(null);
   const storeData = (e) => {
     e.preventDefault();
     if (!title || !description || !img) {
@@ -16,22 +17,32 @@ export const AddBlog = () => {
         des: description,
         img: img,
         views: 0,
+        likes : 0,
         id: Date.now(),
       };
       const blogs = JSON.parse(localStorage.getItem('blogs')) || [];
       blogs.push(data);
       localStorage.setItem('blogs', JSON.stringify(blogs));
-      alert('Hurrah! Added your blog');
+     setAlertMessage('Successfully added your blog');
+
       setTitle('');
       setDescription('');
       setImg('');
+      setTimeout(() => {
+        setAlertMessage(null);
+      }, 3000);
     }
   };
 
   return (
     <>
       <NavBar />
-      <div className="flex justify-center items-center min-h-screen font-mono   bg-gray-50 mt-5 p-10">
+      <br/><br/>
+      {alertMessage && (
+      <div className="bg-green-100 border-l-4 border-green-500 p-6 font-mono text-lg text-green-700 p-4 fixed" role="alert">
+        <p className='flex gap-2 mt-7'><ThumbsUp/>{alertMessage}</p>
+      </div>)}
+      <div className="flex justify-center items-center min-h-screen font-mono   bg-gray-50  p-10">
         <div className="flex flex-col md:flex-row border-box bg-white shadow-lg rounded-lg overflow-hidden">
     
           <div className="md:w-1/2 border-box p-15">
