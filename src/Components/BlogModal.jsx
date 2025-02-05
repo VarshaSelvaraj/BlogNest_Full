@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Share, MessageSquareMore, MessageSquareQuote } from 'lucide-react';
+import { Heart, Share, MessageSquareMore, MessageSquareQuote, Facebook, Twitter,Linkedin } from 'lucide-react';
 
 const BlogModal = ({ isOpen, blog, closeModal }) => {
   if (!isOpen) return null;
@@ -14,6 +14,7 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
   const [newComment, setNewComment] = useState("");
   const [alertMessage, setAlertMessage] = useState(null);
   const [likeMessage, setLikeMessage] = useState(null);
+  const [isShareDropdownOpen, setIsShareDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -54,7 +55,9 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
   
   };
  
-
+  const toggleShareDropdown = () => {
+    setIsShareDropdownOpen(!isShareDropdownOpen);
+  };
 
   return (
     <>
@@ -85,13 +88,24 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
         <div className='flex gap-3'>
           <Heart onClick={handleLike}
           className="text-rose-400 hover:text-rose-800 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"/>
-          <Share 
+          <Share   onClick={toggleShareDropdown}
           className="text-cyan-400 hover:text-cyan-800 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"/>
           <MessageSquareMore 
             className="text-indigo-400 hover:text-indigo-800 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
             onClick={handleToggleComments} 
           />
+
         </div>
+        {isShareDropdownOpen && (
+          <div className="absolute mt-2 bg-white shadow-lg rounded-md w-48 p-2">
+            <div className="flex flex-col">
+              <a href='https://www.facebook.com/' target='_blank'><button className="flex gap-1 text-blue-600 hover:text-zinc-700 mb-2"><Facebook className='text-blue-600'/>Facebook</button></a>
+              <a href='https://twitter.com/' target='_blank'><button className="flex gap-1 text-green-600 hover:text-zinc-700 mb-2"><Twitter className='text-green-600'/>Twitter</button></a>
+              <a href='https://in.linkedin.com/' target='_blank'><button className="flex gap-1 text-sky-500 hover:text-zinc-700"><Linkedin className='text-sky-500' />LinkedIn</button></a>
+            </div>
+          </div>
+        )}
+
               {showComments && (
                   <div className="mt-4 p-4 rounded-md shadow-lg">
                     <h3 className="text-lg font-semibold mb-2">Add a Comment</h3>
