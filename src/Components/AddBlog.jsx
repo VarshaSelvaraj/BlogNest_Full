@@ -1,39 +1,46 @@
 import { useState } from 'react';
 import NavBar from './NavBar';
+import axios from 'axios';
 import { ThumbsUp } from 'lucide-react';
+
 
 export const AddBlog = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [img, setImg] = useState('');
   const [alertMessage, setAlertMessage] = useState(null);
-  const storeData = (e) => {
+  const storeData = async (e) => {
     e.preventDefault();
+    
     if (!title || !description || !img) {
       alert('Please fill in all fields');
     } else {
       const data = {
         title: title,
-        des: description,
-        img: img,
-        views: 0,
-        likes : 0,
-        id: Date.now(),
+        description: description,
+        img: img
       };
-      const blogs = JSON.parse(localStorage.getItem('blogs')) || [];
-      blogs.push(data);
-      localStorage.setItem('blogs', JSON.stringify(blogs));
-     setAlertMessage('Successfully added your blog');
 
-      setTitle('');
-      setDescription('');
-      setImg('');
-      setTimeout(() => {
-        setAlertMessage(null);
-      }, 3000);
+      try {
+        const response = await axios.post('http://localhost:5000/api/addblogs', data);
+
+        if (response.status === 200) {
+          setAlertMessage('Successfully added your blog');
+          console.log('Blog added');
+          setTitle('');
+          setDescription('');
+          setImg('');
+
+          setTimeout(() => {
+            setAlertMessage(null);
+          }, 3000);
+        }
+      } catch (error) {
+        console.error('Error adding blog:', error);
+        alert('Error adding the blog');
+      }
     }
   };
-
   return (
     <>
       <NavBar />

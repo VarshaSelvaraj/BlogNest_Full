@@ -16,7 +16,19 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
   const [likeMessage, setLikeMessage] = useState(null);
   const [isShareDropdownOpen, setIsShareDropdownOpen] = useState(false);
 
-  useEffect(() => {
+  useEffect(() =>
+    {
+      const fetchBlogs = async () => {
+        try {
+          const response = await axios.get('http://localhost:5000/api/getblogs');
+          console.log(response.data);
+          setBlogs(response.data);  
+        } catch (error) {
+          console.error("Error fetching blogs:", error);
+        }
+      };
+  
+      fetchBlogs();
     if (isOpen) {
       setComments(getStoredComments());
     }
@@ -81,7 +93,7 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
             alt={blog.title}
             className="w-1/4 h-auto rounded-lg mt-4 mb-4 mr-5"
           />
-          <p className="w-3/4 text-gray-600 mb-4 p-4">{blog.des}</p>
+          <p className="w-3/4 text-gray-600 mb-4 p-4">{blog.description}</p>
         </div>
         <hr className='text-gray-300 mb-4'/>
 

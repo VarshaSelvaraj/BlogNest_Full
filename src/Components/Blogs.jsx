@@ -3,6 +3,7 @@ import { BookOpenText, FilePenLine, Trash2, Eye, MessageSquareQuote, Frown, Hear
 import NavBar from './NavBar';
 import BlogModal from './BlogModal';
 import EditBlogModal from './EditBlogModal';
+import axios from 'axios';
 
 export const Blogs = () => {
   const [blogs, setBlogs] = useState([]);
@@ -15,26 +16,44 @@ export const Blogs = () => {
   const [editMessage, setEditMessage] = useState(null);
 
   useEffect(() => {
-    const storedBlogs = JSON.parse(localStorage.getItem('blogs')) || [];
-    setBlogs(storedBlogs);
-    const storedComments = JSON.parse(localStorage.getItem('blogComments')) || {};
-    setCommentsData(storedComments);
+    const fetchBlogs = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/getblogs');
+        console.log(response.data);
+        setBlogs(response.data);  
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+      }
+    };
+
+    fetchBlogs();
   }, []);
 
-  const openModal = (blog) => {
-    setSelectedBlog(blog);
+  const openModal = async (blog) => {
+
+    const updatedBlog = { ...blog, views: blog.views + 1 };
+    
+    setSelectedBlog(updatedBlog); 
     setIsModalOpen(true);
-    blog.views += 1;
+  
     setBlogs((prevBlogs) => {
       const updatedBlogs = prevBlogs.map((b) =>
-        b.id === blog.id ? { ...b, views: blog.views } : b
+        b._id === blog._id ? updatedBlog : b 
       );
-      localStorage.setItem('blogs', JSON.stringify(updatedBlogs));
       return updatedBlogs;
     });
-
+  
+    try {
+     
+      await axios.put(`http://localhost:5000/api/updateviews/${blog._id}`, updatedBlog);
+      console.log(`Views for blog with ID ${blog._id} updated successfully`);
+    } catch (error) {
+      console.error('Error updating views:', error);
+    }
+  
     document.getElementById('blogsContainer').classList.add('blur-md');
   };
+  
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -43,7 +62,7 @@ export const Blogs = () => {
   };
 
   const editBlog = (id) => {
-    const blogToEdit = blogs.find((blog) => blog.id === id);
+    const blogToEdit = blogs.find((blog) => blog._id === id);
     setEditingBlog(blogToEdit);
     setIsEditModalOpen(true);
     document.getElementById('blogsContainer').classList.add('blur-md');
@@ -55,34 +74,58 @@ export const Blogs = () => {
     document.getElementById('blogsContainer').classList.remove('blur-md');
   };
 
-  const saveEditedBlog = (updatedBlog) => {
-    const updatedBlogs = blogs.map((blog) =>
-      blog.id === updatedBlog.id ? updatedBlog : blog
-    );
-    setBlogs(updatedBlogs);
-    localStorage.setItem('blogs', JSON.stringify(updatedBlogs));
-    closeEditModal();
-    setEditMessage('Edited successfully');
-    setTimeout(() => {
-      setEditMessage(null);
-    }, 2000);
+  const saveEditedBlog = async (updatedBlog) => {
+    try {
+      console.log("Updated Blog ID:", updatedBlog._id);
+      const response = await axios.put(`http://localhost:5000/api/editblog/${updatedBlog._id}`, updatedBlog);
+      console.log(response.data);
+
+      const updatedBlogs = blogs.map((blog) =>
+        blog.id === updatedBlog._id ? updatedBlog : blog
+      );
+      setBlogs(updatedBlogs);
+      closeEditModal();
+      setEditMessage('Edited successfully');
+      setTimeout(() => {
+        setEditMessage(null);
+      }, 2000);
+    } catch (error) {
+      console.error('Error editing blog:', error);
+    }
+  };
+
+  const deleteBlog = async (blog) => {
+    console.log('Deleting blog:', blog); // Log to check if blog is defined
   
+    if (!blog || !blog._id) {
+      console.error('Blog or Blog ID is missing');
+      return; // Early return if the blog or ID is missing
+    }
+  
+    try {
+      await axios.delete(`http://localhost:5000/api/deleteblog/${blog._id}`);
+      console.log(`Blog with ID ${blog._id} deleted`);
+  
+      const updatedBlogs = blogs.filter((b) => b._id !== blog._id); // Use _id, not id
+      setBlogs(updatedBlogs);
+  
+      setAlertMessage('Blog deleted');
+      setTimeout(() => {
+        setAlertMessage(null);
+      }, 3000);
+  
+      const updatedComments = { ...commentsData };
+      delete updatedComments[blog._id];
+      setCommentsData(updatedComments);
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+      setAlertMessage('Error deleting blog');
+      setTimeout(() => {
+        setAlertMessage(null);
+      }, 3000);
+    }
   };
-
-  const deleteBlog = (id) => {
-    const updatedBlogs = blogs.filter((blog) => blog.id !== id);
-    setBlogs(updatedBlogs);
-    localStorage.setItem('blogs', JSON.stringify(updatedBlogs));
-    setAlertMessage('Blog deleted ');
-    setTimeout(() => {
-      setAlertMessage(null);
-    }, 3000);
-    const updatedComments = { ...commentsData };
-    delete updatedComments[id];
-    setCommentsData(updatedComments);
-    localStorage.setItem('blogComments', JSON.stringify(updatedComments));
-  };
-
+  
   return (
     <>
       <NavBar />
@@ -102,14 +145,14 @@ export const Blogs = () => {
         ) : (
           blogs.map((blog) => (
             <div
-              key={blog.id}
+              key={blog._id}
               className="flex flex-col items-start mt-6 mb-8 p-7 border-gray rounded-lg shadow-xl w-3/4 bg-white"
             >
               <div className="flex w-full justify-between">
                 <div className="w-3/5">
                   <h2 className="text-2xl font-semibold mb-2">{blog.title}</h2>
                   <p className="text-gray-600 mb-5 mr-3">
-                    {blog.des.length > 100 ? blog.des.slice(0, 300) + '...' : blog.des}
+                    {blog.description.length > 100 ? blog.description.slice(0, 300) + '...' :blog.description}
                   </p>
                                     
                   <div className="flex gap-3">
@@ -125,11 +168,11 @@ export const Blogs = () => {
                       className="text-blue-300 hover:text-blue-500 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
                     />
                     <FilePenLine
-                      onClick={() => editBlog(blog.id)}
+                      onClick={() => editBlog(blog._id)}
                       className="text-orange-300 hover:text-orange-500 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
                     />
                     <Trash2
-                      onClick={() => deleteBlog(blog.id)}
+                      onClick={() => deleteBlog(blog)}
                       className="text-red-300 hover:text-red-500 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
                     />
                   </div>
