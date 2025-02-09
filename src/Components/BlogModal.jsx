@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Share, MessageSquareMore, MessageSquareQuote, Facebook, Twitter,Linkedin } from 'lucide-react';
-
+import axios from 'axios';
 const BlogModal = ({ isOpen, blog, closeModal }) => {
   if (!isOpen) return null;
 
@@ -22,7 +22,7 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
         try {
           const response = await axios.get('http://localhost:5000/api/getblogs');
           console.log(response.data);
-          setBlogs(response.data);  
+         
         } catch (error) {
           console.error("Error fetching blogs:", error);
         }
@@ -35,38 +35,52 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
    
     
   }, []);
+
   const handleToggleComments = () => {
     setShowComments(!showComments);
   };
-  const handleAddComment = () => {
+
+  const handleAddComment = async () => {
     if (newComment.trim() !== "") {
-      const updatedComments = [...comments, newComment];
-
-      const storedData = JSON.parse(localStorage.getItem("blogComments")) || {};
-      storedData[blog.id] = updatedComments; 
-      localStorage.setItem("blogComments", JSON.stringify(storedData));
-
-      setComments(updatedComments);
-      setAlertMessage('You commented has been posted');
-      setNewComment(""); 
-      setShowComments(!showComments);
-      setTimeout(() => {
-        setAlertMessage(null);
-      }, 3000);
-      
+      try {
+        const response = await axios.post("http://localhost:5000/api/addcomment", {
+          blogId: blog._id,
+          text: newComment
+        });
+  
+        setComments([...comments, response.data]); // Update state immediately
+        setNewComment("");
+        setAlertMessage("Your comment has been posted");
+        setShowComments(true);
+  
+        setTimeout(() => setAlertMessage(null), 3000);
+      } catch (error) {
+        console.error("Error adding comment:", error);
+      }
     }
   };
-  const handleLike = () => {
-    const updatedBlog = { ...blog, likes: blog.likes + 1 };
-    const storedBlogs = JSON.parse(localStorage.getItem('blogs')) || [];
-    const updatedBlogs = storedBlogs.map((b) =>
-      b.id === updatedBlog.id ? updatedBlog : b
-    );
-    setLikeMessage('You liked this blog');
-    localStorage.setItem('blogs', JSON.stringify(updatedBlogs));
   
+
+  const handleLike = async () => {
+    if (!blog || !blog._id) {
+      console.error('Blog ID is missing');
+      return;
+    }
+  
+    try {
+      const response = await axios.put(`http://localhost:5000/api/like/${blog._id}`);
+      if (response.status === 200) {
+        setLikeMessage('You liked this blog');
+  
+       
+  
+        setTimeout(() => setLikeMessage(null), 3000);
+      }
+    } catch (error) {
+      console.error('Error updating likes:', error);
+    }
   };
- 
+  
   const toggleShareDropdown = () => {
     setIsShareDropdownOpen(!isShareDropdownOpen);
   };
@@ -91,9 +105,9 @@ const BlogModal = ({ isOpen, blog, closeModal }) => {
           <img
             src={blog.img}
             alt={blog.title}
-            className="w-1/4 h-auto rounded-lg mt-4 mb-4 mr-5"
+            className='w-60 h-60'
           />
-          <p className="w-3/4 text-gray-600 mb-4 p-4">{blog.description}</p>
+          <p className="w-3/4 text-gray-600 mb-4 p-4 max-h-60 overflow-y-auto">{blog.description}</p>
         </div>
         <hr className='text-gray-300 mb-4'/>
 

@@ -15,50 +15,68 @@ export const Blogs = () => {
   const [alertMessage, setAlertMessage] = useState(null);
   const [editMessage, setEditMessage] = useState(null);
 
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/getblogs');
-        console.log(response.data);
-        setBlogs(response.data);  
-      } catch (error) {
-        console.error("Error fetching blogs:", error);
-      }
-    };
+  const fetchBlogs = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/getblogs');
+      console.log(response.data);
+      setBlogs(response.data); 
+      
+     
+    } catch (error) {
+      console.error("Error fetching blogs:", error);
+    }
+  };
 
+  useEffect(() => {
     fetchBlogs();
   }, []);
 
-  const openModal = async (blog) => {
+  useEffect(() => {
+    const fetchAllComments = async () => {
+      try {
+        const commentsMap = {};
+        for (const blog of blogs) {
+          const response = await axios.get(`http://localhost:5000/api/comments/${blog._id}`);
+          commentsMap[blog._id] = response.data;
+        }
+        setCommentsData(commentsMap);
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+      }
+    };
+  
+    if (blogs.length > 0) {
+      fetchAllComments();
+    }
+  }, [blogs]);  
+  
+  
 
+  const openModal = async (blog) => {
+    document.getElementById('blogsContainer').classList.add('blur-md');
     const updatedBlog = { ...blog, views: blog.views + 1 };
-    
-    setSelectedBlog(updatedBlog); 
+    setSelectedBlog(updatedBlog);
     setIsModalOpen(true);
   
-    setBlogs((prevBlogs) => {
-      const updatedBlogs = prevBlogs.map((b) =>
-        b._id === blog._id ? updatedBlog : b 
-      );
-      return updatedBlogs;
-    });
-  
+    setBlogs((prevBlogs) => prevBlogs.map((b) => (b._id === blog._id ? updatedBlog : b)));
+ 
     try {
-     
       await axios.put(`http://localhost:5000/api/updateviews/${blog._id}`, updatedBlog);
-      console.log(`Views for blog with ID ${blog._id} updated successfully`);
-    } catch (error) {
-      console.error('Error updating views:', error);
-    }
+      console.log(`Views updated for blog ID: ${blog._id}`);
   
-    document.getElementById('blogsContainer').classList.add('blur-md');
+      
+    } catch (error) {
+      console.error('Error updating views or fetching comments:', error);
+    }
   };
+  
   
 
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedBlog(null);
     document.getElementById('blogsContainer').classList.remove('blur-md');
+    fetchBlogs();
   };
 
   const editBlog = (id) => {
@@ -81,7 +99,7 @@ export const Blogs = () => {
       console.log(response.data);
 
       const updatedBlogs = blogs.map((blog) =>
-        blog.id === updatedBlog._id ? updatedBlog : blog
+        blog._id === updatedBlog._id ? updatedBlog : blog
       );
       setBlogs(updatedBlogs);
       closeEditModal();
@@ -95,18 +113,18 @@ export const Blogs = () => {
   };
 
   const deleteBlog = async (blog) => {
-    console.log('Deleting blog:', blog); // Log to check if blog is defined
+    console.log('Deleting blog:', blog); 
   
     if (!blog || !blog._id) {
       console.error('Blog or Blog ID is missing');
-      return; // Early return if the blog or ID is missing
+      return; 
     }
   
     try {
       await axios.delete(`http://localhost:5000/api/deleteblog/${blog._id}`);
       console.log(`Blog with ID ${blog._id} deleted`);
   
-      const updatedBlogs = blogs.filter((b) => b._id !== blog._id); // Use _id, not id
+      const updatedBlogs = blogs.filter((b) => b._id !== blog._id); 
       setBlogs(updatedBlogs);
   
       setAlertMessage('Blog deleted');
@@ -148,61 +166,65 @@ export const Blogs = () => {
               key={blog._id}
               className="flex flex-col items-start mt-6 mb-8 p-7 border-gray rounded-lg shadow-xl w-3/4 bg-white"
             >
-              <div className="flex w-full justify-between">
-                <div className="w-3/5">
-                  <h2 className="text-2xl font-semibold mb-2">{blog.title}</h2>
-                  <p className="text-gray-600 mb-5 mr-3">
-                    {blog.description.length > 100 ? blog.description.slice(0, 300) + '...' :blog.description}
-                  </p>
-                                    
-                  <div className="flex gap-3">
-                  <p className="flex items-center text-gray-400 mr-4">
-                    <Eye className="mr-1 text-green-200" />
-                    {blog.views}&emsp;
-                    <Heart className="mr-1 text-rose-200" />
-                    {blog.likes}
-                  </p>
-                  
-                    <BookOpenText
-                      onClick={() => openModal(blog)}
-                      className="text-blue-300 hover:text-blue-500 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
-                    />
-                    <FilePenLine
-                      onClick={() => editBlog(blog._id)}
-                      className="text-orange-300 hover:text-orange-500 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
-                    />
-                    <Trash2
-                      onClick={() => deleteBlog(blog)}
-                      className="text-red-300 hover:text-red-500 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
-                    />
+             <div className="flex w-full">
+         
+          <div className="w-3/5 flex flex-col">
+            <h2 className="text-2xl font-semibold mb-2">{blog.title}</h2>
+            <p className="text-gray-600 mb-5 mr-3">
+              {blog.description.length > 100 ? blog.description.slice(0, 300) + '...' : blog.description}
+            </p>
+            
+      
+            <div className="flex gap-3">
+              <p className="flex items-center text-gray-400 mr-4">
+                <Eye className="mr-1 text-green-200" />
+                {blog.views}&emsp;
+                <Heart className="mr-1 text-rose-200" />
+                {blog.likes}
+              </p>
+
+              <BookOpenText
+                onClick={() => openModal(blog)}
+                className="text-blue-300 hover:text-blue-500 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
+              />
+              <FilePenLine
+                onClick={() => editBlog(blog._id)}
+                className="text-orange-300 hover:text-orange-500 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
+              />
+              <Trash2
+                onClick={() => deleteBlog(blog)}
+                className="text-red-300 hover:text-red-500 hover:scale-150 transition-transform duration-300 border p-1 rounded-md cursor-pointer"
+              />
+            </div>
+
+         
+            <div className="flex flex-wrap gap-2 mt-4 w-full">
+              {commentsData[blog._id] && commentsData[blog._id].length > 0 ? (
+                commentsData[blog._id].map((comment, index) => (
+                  <div key={index} className="flex items-center bg-white p-2 rounded-md shadow-sm gap-2">
+                    <MessageSquareQuote className="text-indigo-400 p-1 rounded-md" />
+                    <span className='text-zinc-500'>{comment.text}</span>
                   </div>
-                  <div className="flex gap-2 mt-4 p-4 w-full rounded-md ">
-                {commentsData[blog.id] && commentsData[blog.id].length > 0 ? (
-                  commentsData[blog.id].map((comment, index) => (
-                    <div key={index} className="flex items-center bg-white p-2 rounded-md mb-2 shadow-sm gap-2">
-                    <MessageSquareQuote
-                      className="text-indigo-400 
-                       p-1 rounded-md" 
-                    />
-                    <span className='text-zinc-500'>{comment}</span>
-                  </div>
-                  ))
-                ) : (
-                  <p className="flex gap-2 text-gray-500"><MessageSquareQuote
-                  className="text-indigo-400 
-                   p-1 rounded-md" 
-                />No comments yet.</p>
-                )}
-              </div>
-                </div>
-                <div className="w-2/5">
-                  <img
-                    src={blog.img}
-                    alt={blog.title}
-                    className="ml-5 w-120 h-90 rounded-lg"
-                  />
-                </div>
-              </div>
+                ))
+              ) : (
+                <p className="flex gap-2 text-gray-500">
+                  <MessageSquareQuote className="text-indigo-400 p-1 rounded-md" />
+                  No comments yet.
+                </p>
+              )}
+            </div>
+          </div>
+
+     
+          <div className="w-2/5 flex justify-end">
+            <img
+              src={blog.img}
+              alt={blog.title}
+              className="w-full h-auto rounded-lg object-cover"
+            />
+          </div>
+        </div>
+
 
               
             </div>
@@ -217,6 +239,8 @@ export const Blogs = () => {
         blog={editingBlog}
         onClose={closeEditModal}
         onSave={saveEditedBlog}
+        
+      
       />
     </>
   );

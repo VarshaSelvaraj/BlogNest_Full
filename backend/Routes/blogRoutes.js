@@ -1,11 +1,13 @@
-// backend/routes/blogRoutes.js
+
 
 import express from 'express';
 import Blog from '../Models/BlogSchema.js';
+import Comment from '../Models/CommentsSchema.js';
+
 
 const router = express.Router();
 
-// POST route to create a blog
+//createblog
 router.post('/addblogs', async (req, res) => {
   const { title, description, img } = req.body;
 
@@ -87,14 +89,13 @@ router.delete('/deleteblog/:id', async (req, res) => {
 //uppdateviews
 router.put('/updateviews/:id', async (req, res) => {
     const blogId = req.params.id;
-    const { views } = req.body; // Get the updated views count from the request body
+    const { views } = req.body; 
   
     try {
-      // Find the blog by _id and update the views count
       const updatedBlog = await Blog.findByIdAndUpdate(
         blogId,
-        { views }, // Update the views field
-        { new: true } // Return the updated blog
+        { views }, 
+        { new: true } 
       );
       res.json(updatedBlog);
     } catch (error) {
@@ -102,6 +103,48 @@ router.put('/updateviews/:id', async (req, res) => {
       res.status(500).json({ error: 'Failed to update views' });
     }
   });
+
+  //update likes
+  router.put('/like/:id', async (req, res) => {
+    try {
+      const blog = await Blog.findById(req.params.id);
   
+      if (!blog) {
+        return res.status(404).json({ message: 'Blog not found' });
+      }
+  
+      blog.likes += 1;  
+      await blog.save();
+  
+      res.status(200).json({ likes: blog.likes });
+    } catch (error) {
+      console.error('Error updating likes:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+
+// addcomment
+router.post('/addcomment', async (req, res) => {
+  try {
+    const { blogId, text } = req.body;
+    const newComment = new Comment({ blogId, text });
+    await newComment.save();
+    res.status(201).json(newComment);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add comment' });
+  }
+});
+
+// getcomments
+router.get('/comments/:blogId', async (req, res) => {
+  try {
+    const comments = await Comment.find({ blogId: req.params.blogId });
+    res.status(200).json(comments);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch comments' });
+  }
+});
+
 
 export default router;
